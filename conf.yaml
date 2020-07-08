@@ -1,0 +1,11 @@
+sevro: v1
+
+youtube_dl_options:
+  - simulate
+  - o: '%(title)s.f%(format_id)s.%(ext)s'
+
+channels:
+  nichijou_clips: https://www.youtube.com/user/NichijouClips
+
+playlists:
+  funhaus_demo_disk: https://www.youtube.com/playlist?list=PLPNDsZv-haPrGFuOyBR-S6aEbgSsXNazo

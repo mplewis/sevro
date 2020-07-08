@@ -1,0 +1,9 @@
+README.rst
+setup.py
+sevro/__init__.py
+sevro/sevro.py
+sevro.egg-info/PKG-INFO
+sevro.egg-info/SOURCES.txt
+sevro.egg-info/dependency_links.txt
+sevro.egg-info/requires.txt
+sevro.egg-info/top_level.txt
