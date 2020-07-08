@@ -1,10 +1,17 @@
-from typing import List, Union
+import subprocess
+from os import makedirs, environ
+from os.path import join
+from typing import List, Optional, Tuple
 
+import colored
 import yaml
 from pprint import pprint
 
 from schematics.models import Model
 from schematics.types import StringType, DictType, ListType, UnionType
+
+
+SEVRO_VERSION = 'v1'
 
 
 KeyOption = StringType
@@ -13,36 +20,52 @@ YoutubeDlOption = UnionType((KeyOption, KeyValueOption))
 
 
 class Config(Model):
-    sevro = StringType(regex=r'^v1$')
-    channels = DictType(StringType)
-    playlists = DictType(StringType)
+    """The configuration file format for Sevro."""
+    sevro = StringType(regex=rf'^{SEVRO_VERSION}$', required=True)
     youtube_dl_options = ListType(YoutubeDlOption)
 
-    def cli_options(self) -> str:
-        return build_cli_options(standardize_mixed_options(self.youtube_dl_options))
+    channel_format = StringType()
+    playlist_format = StringType()
+    video_format = StringType()
+
+    channels = DictType(StringType)
+    playlists = DictType(StringType)
+    videos = ListType(StringType)
+
+    def cli_options(self, extras: Optional[dict] = None) -> List[str]:
+        if not extras:
+            extras = {}
+        standardized = {**standardize_mixed_options(self.youtube_dl_options), **extras}
+        return build_cli_options(standardized)
 
 
-def hyphenize(key: str) -> str:
-    """Hyphenize single-char options with one hyphen, all others with two."""
+def hyphenize(key: str, val: Optional[str]) -> (str, bool):
+    """
+    Turn a single key and value into a CLI option string.
+    Use a single hyphen and single space for single-char options.
+    Use a double hyphen and single equals for all other options.
+    If there's no value, omit the value part.
+    """
+    if val is None:
+        if len(key) == 1:
+            return f'-{key}'
+        return f'--{key}'
+
     if len(key) == 1:
-        return f'-{key}'
-    return f'--{key}'
+        return f'-{key} {val}'
+    return f'--{key}={val}'
 
 
-def build_cli_options(opts: dict) -> str:
-    """Convert a dict of CLI options into a CLI option string."""
-    strs = []
-    for key, val in opts.items():
-        with_hyphen = hyphenize(key)
-        if val is None:
-            strs.append(with_hyphen)
-        else:
-            strs.append(f'{with_hyphen}={val}')
-    return ' '.join(strs)
+def build_cli_options(opts: dict) -> List[str]:
+    """Convert a dict of CLI options into a CLI option array."""
+    return [hyphenize(key, val) for key, val in opts.items()]
 
 
 def standardize_mixed_options(raw: List[YoutubeDlOption]) -> dict:
     """Turn [YoutubeDlOption] into a simple key-value dict. Valueless keys are set to value None."""
+    if raw is None:
+        return {}
+
     opts = {}
     for item in raw:
         if isinstance(item, str):
@@ -53,10 +76,85 @@ def standardize_mixed_options(raw: List[YoutubeDlOption]) -> dict:
     return opts
 
 
-with open('conf.yaml') as f:
-    raw = yaml.safe_load(f)
+def read_conf(path: str) -> Config:
+    """Read and validate the configuration at the specified path."""
+    with open(path) as f:
+        raw = yaml.safe_load(f)
     conf = Config(raw)
     conf.validate()
+    return conf
 
-pprint(conf.to_primitive())
-pprint(conf.cli_options())
+
+def printc(color: str, msg: str):
+    """Print a colorized message, resetting the terminal colors at the end."""
+    print(color + msg + colored.style.RESET)
+
+
+def download(target_dir: str, url: str, opts: List[str]):
+    """Download stuff from YouTube into the given directory with the specified youtube-dl options."""
+    printc(colored.fore.BLUE, f'\nDownloading to {target_dir}')
+    makedirs(target_dir, exist_ok=True)
+    cmd = ['youtube-dl', url]
+    cmd.extend(opts)
+    printc(colored.fore.YELLOW, ' \\\n    '.join(cmd))
+    subprocess.call(cmd, cwd=target_dir)
+
+
+def merge_format(conf: Config, fmt: Optional[str]) -> List[str]:
+    """Merge the CLI options from a config with an optional youtube-dl format string."""
+    addl = None
+    if fmt:
+        addl = {'o': fmt}
+    return conf.cli_options(addl)
+
+
+def download_all(
+        conf: Config,
+        target_dir: str,
+        kind: str,
+        fmt: Optional[str],
+        items: List[Tuple[str, str]],
+):
+    """Download multiple series of YouTube items into their own named directories."""
+    for name, url in items:
+        download(join(target_dir, kind, name), url, merge_format(conf, fmt))
+
+
+def download_playlists(conf: Config, target_dir: str):
+    """Download playlists specified in the config."""
+    if not conf.playlists:
+        return
+    download_all(conf, target_dir, 'playlists', conf.playlist_format, conf.playlists.items())
+
+
+def download_channels(conf: Config, target_dir: str):
+    """Download channels specified in the config."""
+    if not conf.channels:
+        return
+    download_all(conf, target_dir, 'channels', conf.channel_format, conf.channels.items())
+
+
+def download_videos(conf: Config, target_dir: str):
+    """Download videos specified in the config."""
+    if not conf.videos:
+        return
+    for url in conf.videos:
+        download(join(target_dir, 'videos'), url, merge_format(conf, conf.video_format))
+
+
+def main():
+    config_path = environ['CONFIG_PATH']
+    output_dir = environ['OUTPUT_DIR']
+    conf = read_conf(config_path)
+    print('Starting with the following configuration:')
+    pprint(conf.to_primitive())
+
+    download_videos(conf, output_dir)
+    download_playlists(conf, output_dir)
+    download_channels(conf, output_dir)
+
+    print('Done!')
+
+
+if __name__ == '__main__':
+    main()

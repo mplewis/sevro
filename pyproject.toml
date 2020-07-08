@@ -8,6 +8,7 @@ authors = ["Matt Lewis <matt@mplewis.com>"]
 python = "^3.8"
 pyyaml = "^5.3.1"
 schematics = "^2.1.0"
+colored = "^1.4.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

@@ -1,11 +1,17 @@
 sevro: v1
 
-youtube_dl_options:
-  - simulate
-  - o: '%(title)s.f%(format_id)s.%(ext)s'
+video_format: '%(uploader)s_%(title)s_%(id)s.%(ext)s'
+playlist_format: '%(playlist_index)s_%(upload_date)s_%(title)s_%(id)s.%(ext)s'
+channel_format: '%(upload_date)s_%(title)s_%(id)s.%(ext)s'
 
-channels:
-  nichijou_clips: https://www.youtube.com/user/NichijouClips
+youtube_dl_options:
+  - ignore-errors
+
+videos:
+  - https://www.youtube.com/watch?v=cVHwlqyMyhM
 
 playlists:
   funhaus_demo_disk: https://www.youtube.com/playlist?list=PLPNDsZv-haPrGFuOyBR-S6aEbgSsXNazo
+
+channels:
+  nichijou_clips: https://www.youtube.com/user/NichijouClips
