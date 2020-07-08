@@ -1,3 +1,4 @@
+import logging
 import subprocess
 from os import makedirs, environ
 from os.path import join
@@ -5,7 +6,7 @@ from typing import List, Optional, Tuple
 
 import colored
 import yaml
-from pprint import pprint
+from pprint import pformat
 
 from schematics.models import Model
 from schematics.types import StringType, DictType, ListType, UnionType
@@ -17,6 +18,17 @@ SEVRO_VERSION = 'v1'
 KeyOption = StringType
 KeyValueOption = DictType(StringType)
 YoutubeDlOption = UnionType((KeyOption, KeyValueOption))
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s: %(msg)s',
+)
+
+
+def log(msg: str):
+    """Log using the default logger at info level."""
+    logging.info(msg)
 
 
 class Config(Model):
@@ -85,18 +97,18 @@ def read_conf(path: str) -> Config:
     return conf
 
 
-def printc(color: str, msg: str):
+def logc(color: str, msg: str):
     """Print a colorized message, resetting the terminal colors at the end."""
-    print(color + msg + colored.style.RESET)
+    log(color + msg + colored.style.RESET)
 
 
 def download(target_dir: str, url: str, opts: List[str]):
     """Download stuff from YouTube into the given directory with the specified youtube-dl options."""
-    printc(colored.fore.BLUE, f'\nDownloading to {target_dir}')
+    logc(colored.fore.BLUE, f'Downloading to {target_dir}')
     makedirs(target_dir, exist_ok=True)
     cmd = ['youtube-dl', url]
     cmd.extend(opts)
-    printc(colored.fore.YELLOW, ' \\\n    '.join(cmd))
+    logc(colored.fore.YELLOW, ' \\\n    '.join(cmd))
     subprocess.call(cmd, cwd=target_dir)
 
 
@@ -146,14 +158,14 @@ def main():
     config_path = environ['CONFIG_PATH']
     output_dir = environ['OUTPUT_DIR']
     conf = read_conf(config_path)
-    print('Starting with the following configuration:')
-    pprint(conf.to_primitive())
+    log('Starting with the following configuration:')
+    log(pformat(conf.to_primitive()))
 
     download_videos(conf, output_dir)
     download_playlists(conf, output_dir)
     download_channels(conf, output_dir)
 
-    print('Done!')
+    log('Done!')
 
 
 if __name__ == '__main__':
