@@ -1,9 +1,10 @@
 README.rst
 setup.py
 sevro/__init__.py
-sevro/logging.py
+sevro/config.py
+sevro/download.py
+sevro/logs.py
 sevro/main.py
-sevro/sevro.py
 sevro.egg-info/PKG-INFO
 sevro.egg-info/SOURCES.txt
 sevro.egg-info/dependency_links.txt
