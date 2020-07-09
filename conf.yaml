@@ -1,8 +1,8 @@
 sevro: v1
 
-video_format: '%(uploader)s_%(title)s_%(id)s.%(ext)s'
-playlist_format: '%(playlist_index)s_%(upload_date)s_%(title)s_%(id)s.%(ext)s'
-channel_format: '%(upload_date)s_%(title)s_%(id)s.%(ext)s'
+video_format: "%(uploader)s_%(title)s_%(id)s.%(ext)s"
+playlist_format: "%(playlist_index)s_%(upload_date)s_%(title)s_%(id)s.%(ext)s"
+channel_format: "%(upload_date)s_%(title)s_%(id)s.%(ext)s"
 
 youtube_dl_options:
   - ignore-errors
