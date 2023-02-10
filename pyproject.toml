@@ -13,7 +13,7 @@ youtube-dl = "^2020.6.16"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
-ipython = "^7.16.1"
+ipython = "^8.10.0"
 black = "^19.10b0"
 flake8 = "^3.8.3"
 
